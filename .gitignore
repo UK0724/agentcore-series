@@ -1,0 +1,32 @@
+# Dependencies & Virtual Environments
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+ENV/
+node_modules/
+
+# Environment Variables & Secrets (CRITICAL: Never commit API keys or credentials)
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+credentials.json
+
+# IDE & OS Files
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Build artifacts & logs
+*.log
+*.tmp
+dist/
+build/

@@ -1,0 +1,11 @@
+{
+  "name": "sprint-agent",
+  "model": {
+    "provider": "gemini",
+    "modelId": "gemini-flash-lite-latest"
+  },
+  "systemPrompt": "You are a sprint assistant. Use your tools. Answer in one sentence.",
+  "tools": [
+    "get_sprint_status"
+  ]
+}
