@@ -1,0 +1,7 @@
+[
+  {
+    "name": "refund-api",
+    "type": "openapi",
+    "spec": "../apis/refund-api.openapi.json"
+  }
+]

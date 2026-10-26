@@ -1,0 +1,8 @@
+{
+  "name": "agentcore-ep08-browser-service",
+  "private": true,
+  "description": "Local browser service for Episode 8",
+  "dependencies": {
+    "playwright-core": "^1.56.0"
+  }
+}

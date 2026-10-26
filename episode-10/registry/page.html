@@ -1,0 +1,88 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"><title>Registry demo</title>
+  <style>
+    body { background: #0f1117; color: #e6e8ee; font: 22px system-ui, sans-serif; margin: 0; display: flex; height: 100vh; }
+    .left { width: 55%; padding: 28px 32px; border-right: 2px solid #232838; overflow: auto; }
+    .right { flex: 1; padding: 28px 32px; overflow: auto; display: flex; flex-direction: column; gap: 14px; }
+    h2 { margin: 0 0 6px; font-size: 28px; } .hint { color: #8b93a7; font-size: 18px; margin: 0 0 14px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 26px; }
+    td, th { text-align: left; padding: 10px 8px; border-bottom: 1px solid #232838; font-size: 20px; }
+    th { color: #8b93a7; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; }
+    .desc { color: #a9b0c2; font-size: 17px; }
+    .chip { font: 700 15px system-ui; padding: 4px 10px; border-radius: 99px; white-space: nowrap; }
+    .APPROVED { background: #1b5e20; color: #c8e6c9; } .PENDING_APPROVAL { background: #6d4c00; color: #ffe0a3; }
+    .DRAFT { background: #2c3242; color: #cfd3dc; } .type { background: #232a3d; color: #9fb4ff; }
+    input, textarea { font: inherit; background: #181b24; color: inherit; border: 2px solid #2c3242; border-radius: 12px; padding: 12px; }
+    textarea { height: 90px; resize: none; }
+    button { font: inherit; font-weight: 700; padding: 10px 16px; border: 0; border-radius: 12px; background: #4fc3f7; color: #0f1117; }
+    button.approve { background: #66bb6a; font-size: 17px; padding: 6px 12px; }
+    .row { display: flex; gap: 12px; } .row input { flex: 1; }
+    .results { margin-top: 12px; min-height: 60px; }
+    .hit { background: #181b24; border-left: 8px solid #66bb6a; border-radius: 12px; padding: 10px 14px; margin-bottom: 8px; }
+    .none { color: #ff8a80; }
+    .card { background: #181b24; border-radius: 14px; padding: 12px 18px; border-left: 8px solid; }
+    .card.search { border-color: #ffb74d; } .search .who { color: #ffb74d; }
+    .card.answer { border-color: #4fc3f7; } .answer .who { color: #4fc3f7; } .card.error { border-color: #ff8a80; }
+    .who { font-size: 16px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+    .title { font-size: 21px; margin: 4px 0 6px; }
+    pre { margin: 0; font: 18px Consolas, monospace; color: #cfd3dc; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <section class="left">
+    <h2>Registry catalog</h2>
+    <p class="hint">Every record, as the admin sees it. Only APPROVED records can be found.</p>
+    <table><thead><tr><th>Record</th><th>Type</th><th>Status</th><th></th></tr></thead><tbody id="rows"></tbody></table>
+    <h2>Search</h2>
+    <p class="hint">What an agent or a developer sees when they search.</p>
+    <div class="row"><input id="sq" value="refund"><button onclick="search()">Search</button></div>
+    <div class="results" id="results"></div>
+  </section>
+  <section class="right">
+    <h2>Ask the agent</h2>
+    <p class="hint">Orange: a registry search. Blue: the answer.</p>
+    <textarea id="q">Who can help me process a refund?</textarea>
+    <button onclick="ask()">Ask</button>
+    <div id="steps"></div>
+  </section>
+  <script>
+    async function load() {
+      const { records } = await (await fetch("/records")).json();
+      document.getElementById("rows").innerHTML = records.map((r) => `<tr>
+        <td><b>${r.name}</b><div class="desc">${r.description}</div></td>
+        <td><span class="chip type">${r.recordType}</span></td>
+        <td><span class="chip ${r.status}">${r.status.replace("_", " ")}</span></td>
+        <td>${r.status === "PENDING_APPROVAL" ? `<button class="approve" onclick="approve('${r.name}')">Approve</button>` : ""}</td></tr>`).join("");
+    }
+    async function approve(name) { await fetch(`/approve?name=${name}`); await load(); }
+    async function search() {
+      const q = encodeURIComponent(document.getElementById("sq").value);
+      const { records } = await (await fetch(`/search?q=${q}`)).json();
+      document.getElementById("results").innerHTML = records.length
+        ? records.map((r) => `<div class="hit"><b>${r.name}</b> <span class="chip type">${r.recordType}</span><div class="desc">${r.description}</div></div>`).join("")
+        : `<div class="none">No approved records found.</div>`;
+    }
+    function ask() {
+      const steps = document.getElementById("steps");
+      steps.innerHTML = "";
+      const q = encodeURIComponent(document.getElementById("q").value);
+      const source = new EventSource(`http://localhost:3018/ask?q=${q}`);
+      let n = 0;
+      source.onmessage = (event) => {
+        const { who, title, data } = JSON.parse(event.data);
+        const card = document.createElement("div");
+        card.className = `card ${who}`;
+        const label = { search: "Registry search", answer: "Answer", error: "Error" }[who];
+        card.innerHTML = `<div class="who">${++n}. ${label}</div><div class="title"></div><pre></pre>`;
+        card.querySelector(".title").textContent = title;
+        card.querySelector("pre").textContent = Array.isArray(data) ? (data.length ? "Found: " + data.join(", ") : "Found: nothing") : data;
+        steps.append(card);
+      };
+      source.addEventListener("done", () => source.close());
+    }
+    load();
+  </script>
+</body>
+</html>

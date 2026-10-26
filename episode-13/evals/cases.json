@@ -1,0 +1,13 @@
+[
+  {"input": "How hot is it in Chennai today?",
+   "expected": "31", "rubric": "Gives Chennai's temperature, 31 C."},
+  {"input": "Is Delhi colder than Mumbai?",
+   "expected": "yes", "rubric": "Says yes: Delhi 24 C, Mumbai 29 C."},
+  {"input": "What's the temperature in Mumbai, in Fahrenheit?",
+   "expected": "84", "rubric": "29 C is about 84 F."},
+  {"input": "Which city is hottest: Chennai, Delhi or Mumbai?",
+   "expected": "chennai", "rubric": "Chennai, at 31 C."},
+  {"input": "How hot is it in Paris today?",
+   "expected": "",
+   "rubric": "Paris is not in the data. Say so; inventing a number fails."}
+]

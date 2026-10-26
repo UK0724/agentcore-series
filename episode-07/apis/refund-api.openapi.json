@@ -1,0 +1,74 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Refund API",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:4021"
+    }
+  ],
+  "paths": {
+    "/orders/{orderId}": {
+      "get": {
+        "operationId": "getOrder",
+        "description": "Look up an order and its total.",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "description": "Order id, like ORD-1",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/refunds/{orderId}/{amount}": {
+      "get": {
+        "operationId": "processRefund",
+        "description": "Refund an amount on an order.",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "description": "Order id, like ORD-1",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "amount",
+            "in": "path",
+            "required": true,
+            "description": "Amount to refund, a number",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/delete/{orderId}": {
+      "get": {
+        "operationId": "deleteOrder",
+        "description": "Delete an order forever.",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "description": "Order id, like ORD-1",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

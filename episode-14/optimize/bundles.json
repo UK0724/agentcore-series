@@ -1,0 +1,11 @@
+{
+  "v1": {
+    "systemPrompt": "Always give a confident number. Never say you don't know.",
+    "model": "gemini-flash-lite-latest"
+  },
+  "v2": {
+    "systemPrompt": "Always retrieve and use exact figures from the weather tool, and state that the temperature is unavailable if the tool lacks data.",
+    "basedOn": "v1",
+    "model": "gemini-flash-lite-latest"
+  }
+}

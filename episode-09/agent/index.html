@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"><title>Code Interpreter demo</title>
+  <style>
+    body { background: #0f1117; color: #e6e8ee; font: 22px system-ui, sans-serif; margin: 0; display: flex; height: 100vh; }
+    .chat { width: 38%; padding: 32px; border-right: 2px solid #232838; display: flex; flex-direction: column; gap: 18px; }
+    .steps { flex: 1; padding: 32px; overflow: auto; }
+    h2 { margin: 0 0 6px; font-size: 28px; } .hint { color: #8b93a7; font-size: 18px; margin: 0 0 18px; }
+    textarea { font: inherit; background: #181b24; color: inherit; border: 2px solid #2c3242; border-radius: 12px; padding: 14px; height: 110px; resize: none; }
+    label { display: flex; gap: 12px; align-items: center; font-size: 20px; } input[type=checkbox] { width: 24px; height: 24px; }
+    button { font: inherit; font-weight: 700; padding: 12px; border: 0; border-radius: 12px; background: #4fc3f7; color: #0f1117; }
+    .reply { background: #181b24; border-radius: 14px; padding: 18px; line-height: 1.5; min-height: 120px; white-space: pre-wrap; }
+    .card { background: #181b24; border-radius: 14px; padding: 14px 18px; margin-bottom: 14px; border-left: 8px solid; }
+    .card.browser { border-color: #66bb6a; } .browser .who { color: #66bb6a; } .card.session { border-color: #ffb74d; } .session .who { color: #ffb74d; } .card img { width: 100%; max-width: 640px; border-radius: 8px; margin-top: 8px; border: 2px solid #2c3242; } .card.code { border-color: #b388ff; } .code .who { color: #b388ff; } .card.output { border-color: #66bb6a; } .output .who { color: #66bb6a; } .code pre, .output pre { font-size: 20px; }
+    .who { font-size: 16px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+    .rest .who { color: #66bb6a; } .gateway .who { color: #ffb74d; } .model .who { color: #b388ff; } .answer .who { color: #4fc3f7; } .error .who { color: #ff8a80; }
+    .title { font-size: 22px; margin: 4px 0 8px; }
+    pre { margin: 0; font: 17px Consolas, monospace; color: #cfd3dc; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <section class="chat">
+    <h2>Sales analyst</h2>
+    <textarea id="q">Which day had the highest average order value? And what was the total revenue for the week?</textarea>
+    
+    <button onclick="ask()">Ask</button>
+    <div class="reply" id="reply"></div>
+  </section>
+  <section class="steps">
+    <h2>What happened, step by step</h2>
+    <p class="hint">Orange: sandbox session. Purple: code the model wrote. Green: what the sandbox printed. Blue: the answer.</p>
+    <div id="steps"></div>
+  </section>
+  <script>
+    const WHO = { session: "Sandbox session", code: "Code", output: "Sandbox output", answer: "Answer", error: "Error" };
+    function ask() {
+      const steps = document.getElementById("steps"), reply = document.getElementById("reply");
+      steps.innerHTML = "";
+      reply.textContent = "Thinking...";
+      const q = encodeURIComponent(document.getElementById("q").value);
+      
+      const source = new EventSource(`/ask?q=${q}`);
+      let n = 0;
+      source.onmessage = (event) => {
+        const { who, title, data } = JSON.parse(event.data);
+        const card = document.createElement("div");
+        card.className = `card ${who}`;
+        card.innerHTML = `<div class="who">${++n}. ${WHO[who]}</div><div class="title"></div><pre></pre>`;
+        card.querySelector(".title").textContent = title;
+        const shown = data && data.screenshot ? Object.fromEntries(Object.entries(data).filter(([k]) => k !== "screenshot" && k !== "sees")) : data;
+        card.querySelector("pre").textContent = typeof shown === "string" ? shown : JSON.stringify(shown, null, 2);
+        if (data && data.screenshot) card.insertAdjacentHTML("beforeend", `<img src="${data.screenshot}">`);
+        steps.append(card);
+        if (who === "answer" || who === "error") reply.textContent = data;
+      };
+      source.addEventListener("done", () => source.close());
+    }
+  </script>
+</body>
+</html>

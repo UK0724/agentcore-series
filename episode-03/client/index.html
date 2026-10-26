@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Runtime contract demo</title>
+  <style>
+    body { background: #0f1117; color: #e6e8ee; font: 22px system-ui, sans-serif; margin: 0; display: flex; height: 100vh; }
+    .left { width: 36%; padding: 32px; border-right: 2px solid #232838; display: flex; flex-direction: column; gap: 16px; }
+    .right { flex: 1; padding: 32px; overflow: auto; }
+    h2 { margin: 0 0 6px; font-size: 28px; } .hint { color: #8b93a7; font-size: 18px; margin: 0 0 16px; }
+    label { font-size: 18px; color: #8b93a7; }
+    input, textarea { font: inherit; background: #181b24; color: inherit; border: 2px solid #2c3242; border-radius: 12px; padding: 12px; }
+    textarea { height: 100px; resize: none; }
+    .row { display: flex; gap: 12px; }
+    button { flex: 1; font: inherit; font-weight: 700; padding: 12px; border: 0; border-radius: 12px; background: #4fc3f7; color: #0f1117; }
+    button.ping { background: #66bb6a; }
+    .card { background: #181b24; border-radius: 14px; padding: 14px 18px; margin-bottom: 14px; border-left: 8px solid #b388ff; }
+    .card.ping { border-color: #66bb6a; }
+    .who { font-size: 16px; font-weight: 700; letter-spacing: 1px; color: #b388ff; } .ping .who { color: #66bb6a; }
+    .title { font-size: 22px; margin: 4px 0 8px; }
+    pre { margin: 0; font: 17px Consolas, monospace; color: #cfd3dc; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <section class="left">
+    <h2>Caller</h2>
+    <p class="hint">Plays the part of AgentCore Runtime, calling our agent on port 8080.</p>
+    <label>Session ID</label>
+    <input id="session" value="session-alice-0001-0002-0003-0004-0005">
+    <label>Prompt</label>
+    <textarea id="prompt">What is the velocity of sprint-42, and which bugs are blocking it?</textarea>
+    <div class="row">
+      <button class="ping" onclick="send('ping')">GET /ping</button>
+      <button onclick="send('invoke')">POST /invocations</button>
+    </div>
+  </section>
+  <section class="right">
+    <h2>Requests and responses</h2>
+    <p class="hint">Green: health check. Purple: an invocation.</p>
+    <div id="cards"></div>
+  </section>
+  <script>
+    let n = 0;
+    async function send(op) {
+      const q = new URLSearchParams({ op, prompt: document.getElementById("prompt").value,
+        session: document.getElementById("session").value });
+      const card = document.createElement("div");
+      card.className = "card " + (op === "ping" ? "ping" : "");
+      card.innerHTML = `<div class="who">${++n}. ${op === "ping" ? "HEALTH CHECK" : "INVOCATION"}</div><div class="title">Waiting...</div><pre></pre>`;
+      document.getElementById("cards").prepend(card);
+      const r = await (await fetch("/call?" + q)).json();
+      card.querySelector(".title").textContent = `${r.request} → ${r.status}`;
+      card.querySelector("pre").textContent = JSON.stringify(r.sent ? { sent: r.sent, received: r.body } : r.body, null, 2);
+    }
+  </script>
+</body>
+</html>

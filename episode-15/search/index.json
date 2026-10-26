@@ -1,0 +1,18 @@
+[
+  {"title": "QuickShip starts Sunday delivery",
+   "url": "https://news.example/quickship-sunday",
+   "text": "QuickShip now delivers on Sundays in metro cities.",
+   "publishedDate": "2026-09-28"},
+  {"title": "QuickShip delivery days",
+   "url": "https://quickship.example/help/delivery-days",
+   "text": "We deliver Monday to Sunday. Sunday slots end at 4 pm.",
+   "publishedDate": "2026-10-01"},
+  {"title": "QuickShip to stop all weekend deliveries!",
+   "url": "https://rumours.example/quickship-weekends",
+   "text": "Insiders say QuickShip will stop weekend deliveries soon.",
+   "publishedDate": "2026-10-10"},
+  {"title": "How to track a QuickShip parcel",
+   "url": "https://quickship.example/help/tracking",
+   "text": "Type your order number on the tracking page and click Track.",
+   "publishedDate": "2026-05-12"}
+]

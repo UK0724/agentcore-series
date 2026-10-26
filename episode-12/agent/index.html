@@ -1,0 +1,80 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"><title>Observability demo</title>
+  <style>
+    body { background: #0f1117; color: #e6e8ee; font: 22px system-ui, sans-serif; margin: 0; display: flex; height: 100vh; }
+    .left { width: 32%; padding: 30px; border-right: 2px solid #232838; display: flex; flex-direction: column; gap: 16px; }
+    .right { flex: 1; padding: 30px; overflow: auto; }
+    h2 { margin: 0 0 6px; font-size: 28px; } .hint { color: #8b93a7; font-size: 18px; margin: 0 0 14px; }
+    textarea { font: inherit; background: #181b24; color: inherit; border: 2px solid #2c3242; border-radius: 12px; padding: 12px; height: 100px; resize: none; }
+    button { font: inherit; font-weight: 700; padding: 12px; border: 0; border-radius: 12px; background: #4fc3f7; color: #0f1117; }
+    .reply { background: #181b24; border-radius: 14px; padding: 16px; line-height: 1.45; min-height: 90px; }
+    .session { color: #ffb74d; font: 700 18px Consolas, monospace; }
+    .tiles { display: flex; gap: 14px; margin-bottom: 22px; }
+    .tile { flex: 1; background: #181b24; border-radius: 14px; padding: 12px 16px; }
+    .tile b { display: block; font-size: 32px; } .tile span { color: #8b93a7; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; }
+    .row { display: flex; align-items: center; height: 40px; border-bottom: 1px solid #1d2230; }
+    .name { width: 380px; font: 18px Consolas, monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lane { flex: 1; position: relative; height: 22px; }
+    .bar { position: absolute; height: 22px; border-radius: 6px; min-width: 4px; }
+    .ms { width: 90px; text-align: right; color: #8b93a7; font-size: 17px; }
+    .invoke { background: #4fc3f7; } .cycle { background: #7e57c2; } .chat { background: #b388ff; } .tool { background: #66bb6a; }
+    .legend { color: #8b93a7; font-size: 17px; margin: 6px 0 12px; }
+    .legend i { display: inline-block; width: 14px; height: 14px; border-radius: 3px; margin: 0 6px 0 16px; vertical-align: -1px; }
+  </style>
+</head>
+<body>
+  <section class="left">
+    <h2>Weather agent</h2>
+    <div class="session" id="session"></div>
+    <textarea id="q">Which is hotter today, Chennai or Delhi?</textarea>
+    <button onclick="ask()">Ask</button>
+    <div class="reply" id="reply"></div>
+  </section>
+  <section class="right">
+    <h2>Trace: what the agent did, and how long it took</h2>
+    <p class="hint">Session &gt; trace (one request) &gt; spans (each step). The same OpenTelemetry format AgentCore sends to CloudWatch.</p>
+    <div class="tiles">
+      <div class="tile"><span>Traces in session</span><b id="traces">0</b></div>
+      <div class="tile"><span>Spans</span><b id="spans">-</b></div>
+      <div class="tile"><span>Latency</span><b id="latency">-</b></div>
+      <div class="tile"><span>Tokens</span><b id="tokens">-</b></div>
+    </div>
+    <div class="legend"><i class="invoke"></i>agent <i class="cycle"></i>loop cycle <i class="chat"></i>model call <i class="tool"></i>tool call</div>
+    <div id="rows"></div>
+  </section>
+  <script>
+    const session = "session-" + Math.random().toString(16).slice(2, 8);
+    document.getElementById("session").textContent = "Session ID: " + session;
+    let traces = 0;
+    const kind = (n) => n.startsWith("invoke") ? "invoke" : n.startsWith("execute_event") ? "cycle" : n.startsWith("execute_tool") ? "tool" : "chat";
+    async function ask() {
+      document.getElementById("reply").textContent = "Thinking...";
+      const q = encodeURIComponent(document.getElementById("q").value);
+      const data = await (await fetch(`/ask?q=${q}&session=${session}`)).json();
+      document.getElementById("reply").textContent = data.answer;
+      const spans = data.spans, byId = Object.fromEntries(spans.map((s) => [s.id, s]));
+      const depth = (s) => (s.parent && byId[s.parent] ? 1 + depth(byId[s.parent]) : 0);
+      const t0 = Math.min(...spans.map((s) => s.start)), t1 = Math.max(...spans.map((s) => s.end));
+      const kids = (id) => spans.filter((s) => s.parent === id || (id === null && !byId[s.parent])).sort((a, b) => a.start - b.start);
+      const walk = (s) => [s, ...kids(s.id).flatMap(walk)];
+      const ordered = kids(null).flatMap(walk);
+      spans.splice(0, spans.length, ...ordered);
+      document.getElementById("traces").textContent = ++traces;
+      document.getElementById("spans").textContent = spans.length;
+      document.getElementById("latency").textContent = (t1 - t0).toFixed(1) + " s";
+      document.getElementById("tokens").textContent = data.tokens;
+      const rows = document.getElementById("rows");
+      rows.innerHTML = "";
+      for (const s of spans) {
+        const left = (100 * (s.start - t0)) / (t1 - t0), width = (100 * (s.end - s.start)) / (t1 - t0);
+        rows.insertAdjacentHTML("beforeend", `<div class="row"><div class="name" style="padding-left:${depth(s) * 22}px">${s.name}</div>
+          <div class="lane"><div class="bar ${kind(s.name)}" style="left:${left}%;width:${width}%"></div></div>
+          <div class="ms">${Math.round((s.end - s.start) * 1000)} ms</div></div>`);
+        await new Promise((r) => setTimeout(r, 250));
+      }
+    }
+  </script>
+</body>
+</html>

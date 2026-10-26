@@ -1,0 +1,12 @@
+[
+  {
+    "name": "sprint-api",
+    "type": "openapi",
+    "spec": "../apis/sprint-api.openapi.json"
+  },
+  {
+    "name": "team-api",
+    "type": "openapi",
+    "spec": "../apis/team-api.openapi.json"
+  }
+]

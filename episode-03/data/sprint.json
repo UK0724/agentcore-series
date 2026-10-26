@@ -1,0 +1,12 @@
+{
+  "sprint-42": {
+    "velocity": 38,
+    "plannedPoints": 50,
+    "completedPoints": 42,
+    "daysLeft": 3,
+    "blockingBugs": [
+      { "id": "BUG-311", "title": "Login fails on Safari" },
+      { "id": "BUG-318", "title": "Export button times out" }
+    ]
+  }
+}

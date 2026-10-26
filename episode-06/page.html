@@ -1,0 +1,79 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Identity demo</title>
+  <style>
+    body { background: #0f1117; color: #e6e8ee; font: 22px system-ui, sans-serif; margin: 0; display: flex; height: 100vh; }
+    .left { width: 38%; padding: 28px; border-right: 2px solid #232838; display: flex; flex-direction: column; gap: 12px; }
+    .right { flex: 1; padding: 28px; overflow: auto; }
+    h2 { margin: 0 0 6px; font-size: 26px; } .hint { color: #8b93a7; font-size: 17px; margin: 0 0 14px; }
+    label { font-size: 17px; color: #8b93a7; }
+    .token { font: 16px Consolas, monospace; background: #181b24; border-radius: 10px; padding: 10px; color: #cfd3dc; word-break: break-all; min-height: 24px; }
+    textarea { font: inherit; font-size: 20px; background: #181b24; color: inherit; border: 2px solid #2c3242; border-radius: 12px; padding: 10px; height: 60px; resize: none; }
+    .row { display: flex; gap: 10px; }
+    button { flex: 1; font: inherit; font-size: 18px; font-weight: 700; padding: 10px; border: 0; border-radius: 12px; background: #4fc3f7; color: #0f1117; }
+    button.signin { background: #66bb6a; } button.allow { background: #ffb74d; } button.anon { background: #555b6b; color: #e6e8ee; }
+    .answer { background: #181b24; border-radius: 12px; padding: 14px; min-height: 70px; font-size: 20px; line-height: 1.45; }
+    .card { background: #181b24; border-radius: 14px; padding: 12px 18px; margin-bottom: 12px; border-left: 8px solid; }
+    .who { font-size: 15px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+    .inbound { border-color: #66bb6a; } .inbound .who { color: #66bb6a; }
+    .consent { border-color: #ffb74d; } .consent .who { color: #ffb74d; }
+    .vault { border-color: #b388ff; } .vault .who { color: #b388ff; }
+    .calendar { border-color: #4fc3f7; } .calendar .who { color: #4fc3f7; }
+    .error { border-color: #ff8a80; } .error .who { color: #ff8a80; }
+    .allowed { border-color: #ffb74d; } .allowed .who { color: #ffb74d; }
+    .text { font-size: 20px; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <section class="left">
+    <h2>Calendar assistant</h2>
+    <div class="row"><button class="signin" onclick="signIn()">Sign in as uday</button></div>
+    <label>Your sign-in token (inbound identity)</label>
+    <div class="token" id="token">not signed in</div>
+    <label>Question</label>
+    <textarea id="q">What meetings do I have today?</textarea>
+    <div class="row">
+      <button onclick="ask()">Ask</button>
+      <button class="allow" onclick="allow()">Allow calendar access</button>
+    </div>
+    <div class="answer" id="answer"></div>
+  </section>
+  <section class="right">
+    <h2>What Identity checked</h2>
+    <p class="hint">Green: who is calling. Orange: user consent. Purple: token vault. Blue: the calendar API.</p>
+    <div id="cards"></div>
+  </section>
+  <script>
+    let token = "";
+    const TITLE = { inbound: "Inbound: who is calling?", consent: "Consent needed", vault: "Token vault",
+                    calendar: "Calendar API", error: "Rejected", allowed: "Consent given" };
+    function show(steps, extra) {
+      const cards = document.getElementById("cards");
+      cards.innerHTML = "";
+      for (const [kind, text] of steps.concat(extra || [])) {
+        cards.insertAdjacentHTML("beforeend", `<div class="card ${kind}"><div class="who">${TITLE[kind]}</div><div class="text">${text}</div></div>`);
+      }
+    }
+    async function call(path, params) {
+      return (await fetch(path + "?" + new URLSearchParams(params))).json();
+    }
+    async function signIn() {
+      const r = await call("/sign-in", { user: "uday" });
+      token = r.token;
+      document.getElementById("token").textContent = token.slice(0, 60) + "...";
+    }
+    async function ask() {
+      document.getElementById("answer").textContent = "Thinking...";
+      const r = await call("/ask", { token, q: document.getElementById("q").value });
+      document.getElementById("answer").textContent = r.answer.split("**").join("");
+      show(r.steps, r.answer.startsWith("Rejected") ? [["error", "No valid sign-in token, so the agent refused."]] : []);
+    }
+    async function allow() {
+      const r = await call("/allow", { user: "uday" });
+      show([["allowed", "uday clicked Allow: the agent may read the calendar"]]);
+    }
+  </script>
+</body>
+</html>

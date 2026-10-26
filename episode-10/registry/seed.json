@@ -1,0 +1,17 @@
+[
+  {"name": "sprint-tools", "recordType": "MCP", "recordVersion": "1",
+   "description": "Sprint velocity, days left and blocking bugs",
+   "status": "APPROVED"},
+  {"name": "calendar-agent", "recordType": "AGENT", "recordVersion": "1",
+   "description": "Reads a user's calendar, with their consent",
+   "status": "APPROVED"},
+  {"name": "parcel-agent", "recordType": "AGENT", "recordVersion": "1",
+   "description": "Tracks parcels on the QuickShip website",
+   "status": "APPROVED"},
+  {"name": "refund-agent", "recordType": "AGENT", "recordVersion": "1",
+   "description": "Looks up orders and processes refunds",
+   "status": "PENDING_APPROVAL"},
+  {"name": "pdf-summary", "recordType": "SKILL", "recordVersion": "1",
+   "description": "Summarises a PDF into five bullet points",
+   "status": "DRAFT"}
+]

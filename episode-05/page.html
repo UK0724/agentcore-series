@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Memory demo</title>
+  <style>
+    body { background: #0f1117; color: #e6e8ee; font: 22px system-ui, sans-serif; margin: 0; display: flex; height: 100vh; }
+    .left { width: 38%; padding: 28px; border-right: 2px solid #232838; display: flex; flex-direction: column; gap: 12px; }
+    .right { flex: 1; padding: 28px; overflow: auto; display: flex; flex-direction: column; gap: 16px; }
+    h2 { margin: 0; font-size: 26px; } label { font-size: 17px; color: #8b93a7; }
+    input, textarea { font: inherit; font-size: 20px; background: #181b24; color: inherit; border: 2px solid #2c3242; border-radius: 12px; padding: 10px 12px; }
+    textarea { height: 70px; resize: none; }
+    .row { display: flex; gap: 10px; }
+    button { flex: 1; font: inherit; font-size: 19px; font-weight: 700; padding: 10px; border: 0; border-radius: 12px; background: #4fc3f7; color: #0f1117; }
+    button.extract { background: #b388ff; }
+    .reply { background: #181b24; border-radius: 12px; padding: 14px; min-height: 90px; font-size: 20px; line-height: 1.45; }
+    .box { background: #181b24; border-radius: 14px; padding: 14px 18px; border-left: 8px solid #66bb6a; }
+    .box.long { border-color: #b388ff; } .box.used { border-color: #ffb74d; }
+    .box h3 { margin: 0 0 8px; font-size: 16px; letter-spacing: 1px; text-transform: uppercase; color: #66bb6a; }
+    .long h3 { color: #b388ff; } .used h3 { color: #ffb74d; }
+    ul { margin: 0; padding-left: 22px; font-size: 19px; line-height: 1.45; }
+    .empty { color: #8b93a7; font-size: 18px; }
+  </style>
+</head>
+<body>
+  <section class="left">
+    <h2>Chat with memory</h2>
+    <div class="row">
+      <div style="flex:1;display:flex;flex-direction:column;gap:4px"><label>Actor ID (the user)</label><input id="actor" value="uday"></div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:4px"><label>Session ID</label><input id="session" value="session-1"></div>
+    </div>
+    <label>Message</label>
+    <textarea id="message"></textarea>
+    <div class="row">
+      <button onclick="send()">Send</button>
+      <button class="extract" onclick="extract()">Save long-term facts</button>
+    </div>
+    <div class="reply" id="reply"></div>
+  </section>
+  <section class="right">
+    <div class="box"><h3>Short-term: this session's turns</h3><div id="turns" class="empty">empty</div></div>
+    <div class="box used"><h3>Long-term facts used for this answer</h3><div id="used" class="empty">none</div></div>
+    <div class="box long"><h3>Long-term memory records for this user</h3><div id="records" class="empty">none yet</div></div>
+  </section>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const list = (el, items, empty) => { el.className = items.length ? "" : "empty"; el.innerHTML = items.length ? "<ul>" + items.map((t) => `<li>${t}</li>`).join("") + "</ul>" : empty; };
+    const q = (extra) => new URLSearchParams({ actor: $("actor").value, session: $("session").value, ...extra });
+    async function send() {
+      $("reply").textContent = "Thinking...";
+      const r = await (await fetch("/chat?" + q({ message: $("message").value }))).json();
+      $("reply").textContent = r.reply;
+      list($("turns"), r.turns.filter(Boolean), "empty");
+      list($("used"), r.facts_used, "none");
+    }
+    async function extract() {
+      $("records").textContent = "Extracting...";
+      const r = await (await fetch("/extract?" + q({}))).json();
+      list($("records"), r.saved, "none yet");
+    }
+  </script>
+</body>
+</html>
